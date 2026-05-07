@@ -16,6 +16,7 @@ pairs:
     volatility:      0.10     # ~1 pip/tick at 100ms; multiply by ~13 for 0.5ms ticks
     drift:           0.0      # neutral — no directional bias
     spreadPips:      2.0
+    pipSize:         0.00001  # 5 decimal places (standard FX major)
     tickIntervalMs:  100.0
     bidSize:         1000000.0
     askSize:         1000000.0
@@ -27,6 +28,7 @@ pairs:
     volatility:      0.12     # GBP/USD naturally more volatile
     drift:           0.02     # slight uptrend
     spreadPips:      2.5
+    pipSize:         0.00001
     tickIntervalMs:  100.0
     bidSize:         1000000.0
     askSize:         1000000.0
@@ -38,6 +40,19 @@ pairs:
     volatility:      0.10
     drift:           -0.03    # slight downtrend (USD weakening)
     spreadPips:      3.0
+    pipSize:         0.01     # 2 decimal places (JPY pairs)
     tickIntervalMs:  100.0
     bidSize:         1000000.0
     askSize:         1000000.0
+
+  - ccyPair:         "XAU/USD"
+    instrument:      "FXSPOT"
+    lpName:          "SIMLP4"
+    initialMidPrice: 2350.00
+    volatility:      0.15     # gold is more volatile than FX
+    drift:           0.03
+    spreadPips:      5.0
+    pipSize:         0.01     # gold: 1 pip = $0.01
+    tickIntervalMs:  100.0
+    bidSize:         100.0
+    askSize:         100.0

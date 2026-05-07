@@ -6,6 +6,7 @@ public record GbmTick(
     String lpName,
     double mid,
     double spreadPips,
+    double pipSize,
     double bidSize,
     double askSize,
     long   processTimeNanos

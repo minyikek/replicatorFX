@@ -31,7 +31,7 @@ public final class MessageEncoder {
 
     public int encode(GbmTick tick) {
         long   now        = System.nanoTime();
-        double halfSpread = pipsToPrice(tick.spreadPips(), tick.ccyPair()) / 2.0;
+        double halfSpread = tick.spreadPips() * tick.pipSize() / 2.0;
         double bid        = tick.mid() - halfSpread;
         double ask        = tick.mid() + halfSpread;
 
@@ -85,10 +85,6 @@ public final class MessageEncoder {
 
     public MutableDirectBuffer buffer() {
         return buffer;
-    }
-
-    private static double pipsToPrice(double pips, String ccyPair) {
-        return ccyPair.contains("JPY") ? pips * 0.01 : pips * 0.00001;
     }
 
     private static byte[] toFixedBytes(String value, int targetLen) {

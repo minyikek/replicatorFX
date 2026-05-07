@@ -70,6 +70,7 @@ public final class GbmTickerNode implements EventDispatcher<GbmTick>, Runnable, 
                         config.lpName,
                         state.currentMid,
                         config.spreadPips,
+                        config.pipSize,
                         config.bidSize,
                         config.askSize,
                         processTime
