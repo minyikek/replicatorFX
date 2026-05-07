@@ -1,0 +1,43 @@
+aeron:
+  channel: "aeron:ipc"
+  streamId: 1
+
+global:
+  fixSession:   "FX-SIM-SESSION"
+  takerCompID:  "TAKER001"
+  senderCompID: "SENDER001"
+  sourceSystem: "REPLICATORFX"
+
+pairs:
+  - ccyPair:         "EUR/USD"
+    instrument:      "FXSPOT"
+    lpName:          "SIMLP1"
+    initialMidPrice: 1.08500
+    volatility:      0.005
+    drift:           0.0001
+    spreadPips:      2.0
+    tickIntervalMs:  0.5    # 0.5ms = 2 ticks/ms; use 1.0 for 1ms, 100.0 for 100ms
+    bidSize:         1000000.0
+    askSize:         1000000.0
+
+  - ccyPair:         "GBP/USD"
+    instrument:      "FXSPOT"
+    lpName:          "SIMLP2"
+    initialMidPrice: 1.27000
+    volatility:      0.006
+    drift:           0.0
+    spreadPips:      2.5
+    tickIntervalMs:  0.5    # 0.5ms = 2 ticks/ms; use 1.0 for 1ms, 100.0 for 100ms
+    bidSize:         1000000.0
+    askSize:         1000000.0
+
+  - ccyPair:         "USD/JPY"
+    instrument:      "FXSPOT"
+    lpName:          "SIMLP3"
+    initialMidPrice: 149.500
+    volatility:      0.005
+    drift:           0.0
+    spreadPips:      3.0
+    tickIntervalMs:  0.5    # 0.5ms = 2 ticks/ms; use 1.0 for 1ms, 100.0 for 100ms
+    bidSize:         1000000.0
+    askSize:         1000000.0

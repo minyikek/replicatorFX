@@ -1,0 +1,14 @@
+package com.replicatorfx.config;
+
+public class PairConfig {
+    public String ccyPair;
+    public String instrument;
+    public String lpName;
+    public double initialMidPrice;
+    public double volatility;
+    public double drift;
+    public double spreadPips;
+    public double tickIntervalMs;  // supports sub-millisecond, e.g. 0.5 = 500µs (2 ticks/ms)
+    public double bidSize;
+    public double askSize;
+}
