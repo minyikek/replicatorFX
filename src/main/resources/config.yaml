@@ -37,8 +37,8 @@ pairs:
     instrument:      "FXSPOT"
     lpName:          "SIMLP3"
     initialMidPrice: 149.500
-    volatility:      0.10
-    drift:           -0.03    # slight downtrend (USD weakening)
+    volatility:      0.50
+    drift:           0.1    # slight uptrend (JPY weakening)
     spreadPips:      3.0
     pipSize:         0.01     # 2 decimal places (JPY pairs)
     tickIntervalMs:  100.0
