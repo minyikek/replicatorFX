@@ -20,10 +20,12 @@ public final class MessageDecoder {
 
         snapshotDecoder.wrapAndApplyHeader(buffer, offset, headerDecoder);
 
-        String ccyPair  = snapshotDecoder.ccyPair();
-        String tenor    = snapshotDecoder.tenor();
-        long   seqId    = snapshotDecoder.seqId();
-        long   sendTime = snapshotDecoder.sendingTime();
+        String ccyPair   = snapshotDecoder.ccyPair();
+        String tenor     = snapshotDecoder.tenor();
+        long   seqId     = snapshotDecoder.seqId();
+        long   sendTime  = snapshotDecoder.sendingTime();
+        double pipSize   = snapshotDecoder.pipSize();
+        int    decPlaces = pipSizeToDecimalPlaces(pipSize);
 
         double bid = Double.NaN, bidSize = Double.NaN;
         double ask = Double.NaN, askSize = Double.NaN;
@@ -45,8 +47,8 @@ public final class MessageDecoder {
             a.entryId();
         }
 
-        System.out.printf(
-            "[%s/%s] bid=%.5f (%.0f) ask=%.5f (%.0f) lp=%s seqId=%d latencyNs=%d%n",
+        String fmt = "[%s/%s] bid=%." + decPlaces + "f (%.0f) ask=%." + decPlaces + "f (%.0f) lp=%s seqId=%d latencyNs=%d%n";
+        System.out.printf(fmt,
             ccyPair, tenor,
             bid, bidSize,
             ask, askSize,
@@ -54,5 +56,10 @@ public final class MessageDecoder {
             seqId,
             System.nanoTime() - sendTime
         );
+    }
+
+    // -log10(pipSize) + 1: e.g. 0.00001 → 5dp, 0.01 → 3dp, 0.001 → 4dp
+    private static int pipSizeToDecimalPlaces(double pipSize) {
+        return (int) Math.round(-Math.log10(pipSize)) + 1;
     }
 }

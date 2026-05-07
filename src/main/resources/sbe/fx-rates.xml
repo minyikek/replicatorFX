@@ -44,6 +44,7 @@
         <field name="ccyPair"             id="7"  type="char7"/>
         <field name="lastUpdateTimeStamp" id="8"  type="uint64"/>
         <field name="isModifiedByInvoke"  id="9"  type="BooleanType"/>
+        <field name="pipSize"             id="30" type="double"/>
 
         <group name="bids" id="10" dimensionType="groupSizeEncoding">
             <field name="price"     id="11" type="double"/>

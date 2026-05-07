@@ -51,7 +51,8 @@ public final class MessageEncoder {
             .processTime(tick.processTimeNanos())
             .lastUpdateTimeStamp(now)
             .forward(BooleanType.FALSE)
-            .isModifiedByInvoke(BooleanType.FALSE);
+            .isModifiedByInvoke(BooleanType.FALSE)
+            .pipSize(tick.pipSize());
 
         encoder.putInstrument(toFixedBytes(tick.instrument(), 10), 0);
         encoder.putTenor(toFixedBytes("SP", 10), 0);
