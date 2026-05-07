@@ -63,7 +63,19 @@ sourceSets.main.java.srcDirs += [sbeGeneratedSrc]
 compileJava.dependsOn(generateSbeCodecs)
 
 application {
-    mainClass = 'com.replicatorfx.Main'
+    mainClass = project.findProperty('mainClass') ?: 'com.replicatorfx.Main'
+}
+
+run {
+    // Required for Aeron on Java 17+ — accesses internal NIO selector fields
+    jvmArgs '--add-opens', 'java.base/sun.nio.ch=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.nio=ALL-UNNAMED'
+
+    // Default to the bundled config when no --args are supplied
+    def bundledConfig = project.file('src/main/resources/config.yaml')
+    if (bundledConfig.exists() && !project.hasProperty('args')) {
+        args bundledConfig.absolutePath
+    }
 }
 
 jar {

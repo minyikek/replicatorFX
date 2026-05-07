@@ -32,13 +32,17 @@ public final class MessageDecoder {
         for (var b : snapshotDecoder.bids()) {
             bid     = b.price();
             bidSize = b.size();
+            b.valueDate();          // must consume var data in declaration order
             bidLp   = b.lpName();
+            b.entryId();
         }
 
         for (var a : snapshotDecoder.asks()) {
             ask     = a.price();
             askSize = a.size();
+            a.valueDate();          // must consume var data in declaration order
             askLp   = a.lpName();
+            a.entryId();
         }
 
         System.out.printf(
