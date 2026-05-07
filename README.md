@@ -184,6 +184,33 @@ where `Z ~ N(0,1)` and `dt = tickIntervalMs / (365 × 24 × 3,600,000)` (time st
 
 **JPY pairs** use a pip size of 0.01; all other pairs use 0.00001.
 
+### Tuning volatility for visible pip movement
+
+Per-tick price standard deviation: `σ_tick = S × σ × √dt`
+
+Working backwards from a target pip movement per tick: `σ = (pips × pip_size) / (√dt × S)`
+
+| `tickIntervalMs` | Target pips/tick | EUR/USD `volatility` | GBP/USD `volatility` | USD/JPY `volatility` |
+|---|---|---|---|---|
+| `100.0` | ~0.5 pip | `0.08` | `0.10` | `0.08` |
+| `100.0` | ~1.0 pip | `0.16` | `0.20` | `0.16` |
+| `100.0` | ~2.0 pip | `0.33` | `0.40` | `0.32` |
+| `1.0` | ~0.5 pip | `0.82` | `1.02` | `0.80` |
+| `0.5` | ~0.5 pip | `1.16` | `1.44` | `1.13` |
+
+Real-world annualised vol: EUR/USD ~8%, GBP/USD ~10%, USD/JPY ~8%. Values above `0.10` are inflated for simulator visibility at coarser tick rates; scale by `√(100 / tickIntervalMs)` when changing tick rate to preserve pip-per-tick magnitude.
+
+### Tuning drift for directional trends
+
+Drift accumulates over minutes, not individual ticks. Use it to simulate a sustained trend:
+
+| `drift` | Effect |
+|---|---|
+| `0.0` | Flat / mean-reverting |
+| `0.05` | Gradual uptrend (~5% price rise per year) |
+| `-0.05` | Gradual downtrend |
+| `0.5` | Aggressive uptrend — visible within minutes |
+
 ## Dependencies
 
 | Library | Purpose |

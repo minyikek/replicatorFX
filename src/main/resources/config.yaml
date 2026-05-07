@@ -13,10 +13,10 @@ pairs:
     instrument:      "FXSPOT"
     lpName:          "SIMLP1"
     initialMidPrice: 1.08500
-    volatility:      0.005
-    drift:           0.0001
+    volatility:      0.10     # ~1 pip/tick at 100ms; multiply by ~13 for 0.5ms ticks
+    drift:           0.0      # neutral — no directional bias
     spreadPips:      2.0
-    tickIntervalMs:  0.5    # 0.5ms = 2 ticks/ms; use 1.0 for 1ms, 100.0 for 100ms
+    tickIntervalMs:  100.0
     bidSize:         1000000.0
     askSize:         1000000.0
 
@@ -24,10 +24,10 @@ pairs:
     instrument:      "FXSPOT"
     lpName:          "SIMLP2"
     initialMidPrice: 1.27000
-    volatility:      0.006
-    drift:           0.0
+    volatility:      0.12     # GBP/USD naturally more volatile
+    drift:           0.02     # slight uptrend
     spreadPips:      2.5
-    tickIntervalMs:  0.5    # 0.5ms = 2 ticks/ms; use 1.0 for 1ms, 100.0 for 100ms
+    tickIntervalMs:  100.0
     bidSize:         1000000.0
     askSize:         1000000.0
 
@@ -35,9 +35,9 @@ pairs:
     instrument:      "FXSPOT"
     lpName:          "SIMLP3"
     initialMidPrice: 149.500
-    volatility:      0.005
-    drift:           0.0
+    volatility:      0.10
+    drift:           -0.03    # slight downtrend (USD weakening)
     spreadPips:      3.0
-    tickIntervalMs:  0.5    # 0.5ms = 2 ticks/ms; use 1.0 for 1ms, 100.0 for 100ms
+    tickIntervalMs:  100.0
     bidSize:         1000000.0
     askSize:         1000000.0
