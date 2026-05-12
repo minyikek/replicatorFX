@@ -67,7 +67,7 @@ global:
 
 pairs:
   - ccyPair:         "EUR/USD"   # 7-char currency pair (char[7])
-    instrument:      "FXSPOT"    # up to 10 chars (char[10])
+    instrument:      "SPOT"    # up to 10 chars (char[10])
     lpName:          "SIMLP1"    # liquidity provider name
     initialMidPrice: 1.08500     # starting mid price
     volatility:      0.005       # annualised σ (e.g. 0.005 = 50 bps/year)
