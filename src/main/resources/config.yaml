@@ -12,11 +12,12 @@ pairs:
   - ccyPair:         "EUR/USD"
     instrument:      "FXSPOT"
     lpName:          "SIMLP1"
-    initialMidPrice: 1.08500
+    initialMidPrice: 108500   # fixed-point long: 1.08500 × 10^5
+    decimalPlaces:   5
     volatility:      0.10     # ~1 pip/tick at 100ms; multiply by ~13 for 0.5ms ticks
     drift:           0.0      # neutral — no directional bias
     spreadPips:      2.0
-    pipSize:         0.00001  # 5 decimal places (standard FX major)
+    pipSize:         0.00001  # 1 pip = 0.00001 (standard FX major)
     tickIntervalMs:  100.0
     bidSize:         1000000.0
     askSize:         1000000.0
@@ -24,11 +25,12 @@ pairs:
   - ccyPair:         "GBP/USD"
     instrument:      "FXSPOT"
     lpName:          "SIMLP2"
-    initialMidPrice: 1.27000
+    initialMidPrice: 127000   # fixed-point long: 1.27000 × 10^5
+    decimalPlaces:   5
     volatility:      0.12     # GBP/USD naturally more volatile
     drift:           0.02     # slight uptrend
     spreadPips:      2.5
-    pipSize:         0.00001
+    pipSize:         0.00001  # 1 pip = 0.00001
     tickIntervalMs:  100.0
     bidSize:         1000000.0
     askSize:         1000000.0
@@ -36,11 +38,12 @@ pairs:
   - ccyPair:         "USD/JPY"
     instrument:      "FXSPOT"
     lpName:          "SIMLP3"
-    initialMidPrice: 149.500
+    initialMidPrice: 149500   # fixed-point long: 149.500 × 10^3
+    decimalPlaces:   3
     volatility:      0.50
-    drift:           0.1    # slight uptrend (JPY weakening)
+    drift:           0.1      # slight uptrend (JPY weakening)
     spreadPips:      3.0
-    pipSize:         0.01     # 2 decimal places (JPY pairs)
+    pipSize:         0.01     # 1 pip = 0.01 (JPY pairs)
     tickIntervalMs:  100.0
     bidSize:         1000000.0
     askSize:         1000000.0
@@ -48,11 +51,12 @@ pairs:
   - ccyPair:         "XAU/USD"
     instrument:      "FXSPOT"
     lpName:          "SIMLP4"
-    initialMidPrice: 2350.00
+    initialMidPrice: 235000   # fixed-point long: 2350.00 × 10^2
+    decimalPlaces:   2
     volatility:      0.15     # gold is more volatile than FX
     drift:           0.03
     spreadPips:      5.0
-    pipSize:         0.01     # gold: 1 pip = $0.01
+    pipSize:         0.01     # 1 pip = 0.01 (gold)
     tickIntervalMs:  100.0
     bidSize:         100.0
     askSize:         100.0

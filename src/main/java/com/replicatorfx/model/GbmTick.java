@@ -4,7 +4,8 @@ public record GbmTick(
     String ccyPair,
     String instrument,
     String lpName,
-    double mid,
+    long   mid,            // fixed-point, scaled by 10^decimalPlaces
+    int    decimalPlaces,  // price precision, e.g. 5 for EUR/USD, 3 for USD/JPY
     double spreadPips,
     double pipSize,
     double bidSize,
