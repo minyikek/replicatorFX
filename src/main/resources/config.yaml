@@ -10,7 +10,7 @@ global:
 
 pairs:
   - ccyPair:         "EUR/USD"
-    instrument:      "FXSPOT"
+    instrument:      "SPOT"
     lpName:          "SIMLP1"
     initialMidPrice: 108500   # fixed-point long: 1.08500 × 10^5
     decimalPlaces:   5
@@ -23,7 +23,7 @@ pairs:
     askSize:         1000000.0
 
   - ccyPair:         "GBP/USD"
-    instrument:      "FXSPOT"
+    instrument:      "SPOT"
     lpName:          "SIMLP2"
     initialMidPrice: 127000   # fixed-point long: 1.27000 × 10^5
     decimalPlaces:   5
@@ -36,7 +36,7 @@ pairs:
     askSize:         1000000.0
 
   - ccyPair:         "USD/JPY"
-    instrument:      "FXSPOT"
+    instrument:      "SPOT"
     lpName:          "SIMLP3"
     initialMidPrice: 149500   # fixed-point long: 149.500 × 10^3
     decimalPlaces:   3
@@ -49,7 +49,7 @@ pairs:
     askSize:         1000000.0
 
   - ccyPair:         "XAU/USD"
-    instrument:      "FXSPOT"
+    instrument:      "SPOT"
     lpName:          "SIMLP4"
     initialMidPrice: 235000   # fixed-point long: 2350.00 × 10^2
     decimalPlaces:   2
