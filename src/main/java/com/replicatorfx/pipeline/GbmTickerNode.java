@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 /**
@@ -21,13 +22,17 @@ import java.util.stream.Collectors;
  */
 public final class GbmTickerNode implements EventDispatcher<GbmTick>, Runnable, AutoCloseable {
 
-    private final List<Listener<GbmTick>>             listeners = new CopyOnWriteArrayList<>();
-    private final ConcurrentHashMap<String, PairState> pairs     = new ConcurrentHashMap<>();
-    private final GbmPriceModel                        gbm       = new GbmPriceModel();
-    private volatile boolean                           running   = true;
+    private final List<Listener<GbmTick>>                  listeners    = new CopyOnWriteArrayList<>();
+    private final ConcurrentHashMap<String, PairState>     pairs        = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, AtomicLong>    rateCounters = new ConcurrentHashMap<>();
+    private final GbmPriceModel                            gbm          = new GbmPriceModel();
+    private volatile boolean                               running      = true;
 
     public GbmTickerNode(SimulatorConfig config) {
-        config.pairs.forEach(pc -> pairs.put(pc.ccyPair, new PairState(pc)));
+        config.pairs.forEach(pc -> {
+            pairs.put(pc.ccyPair, new PairState(pc));
+            rateCounters.put(pc.ccyPair, new AtomicLong(0));
+        });
     }
 
     public void onConfig(SimulatorConfig newConfig) {
@@ -37,6 +42,7 @@ public final class GbmTickerNode implements EventDispatcher<GbmTick>, Runnable, 
                 existing.config.set(pc);
             } else {
                 pairs.put(pc.ccyPair, new PairState(pc));
+                rateCounters.put(pc.ccyPair, new AtomicLong(0));
                 System.out.println("[ticker] added pair: " + pc.ccyPair);
             }
         }
@@ -60,7 +66,8 @@ public final class GbmTickerNode implements EventDispatcher<GbmTick>, Runnable, 
                 long       intervalNs = (long) (config.tickIntervalMs * 1_000_000.0);
 
                 if (now - state.lastTickNano >= intervalNs) {
-                    long   processTime = System.nanoTime();
+                    long   processTime  = System.nanoTime();
+                    long   timestampMs  = System.currentTimeMillis();
                     long   scale       = pow10(config.decimalPlaces);
                     // GBM operates in real-valued space; convert fixed-point → double → fixed-point
                     double midDouble   = state.currentMid / (double) scale;
@@ -68,6 +75,10 @@ public final class GbmTickerNode implements EventDispatcher<GbmTick>, Runnable, 
                     long   newMidFP    = Math.round(newDouble * scale);
                     state.currentMid   = newMidFP;
                     state.lastTickNano = now;
+
+                    long rateId = rateCounters
+                        .computeIfAbsent(config.ccyPair, k -> new AtomicLong(0))
+                        .incrementAndGet();
 
                     dispatch(new GbmTick(
                         config.ccyPair,
@@ -79,6 +90,8 @@ public final class GbmTickerNode implements EventDispatcher<GbmTick>, Runnable, 
                         config.pipSize,
                         config.bidSize,
                         config.askSize,
+                        rateId,
+                        timestampMs,
                         processTime
                     ));
                 }
