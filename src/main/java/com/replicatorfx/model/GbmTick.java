@@ -10,5 +10,7 @@ public record GbmTick(
     double pipSize,
     double bidSize,
     double askSize,
+    long   rateId,         // monotonically increasing per ccyPair
+    long   timestampMs,    // System.currentTimeMillis() at tick generation
     long   processTimeNanos
 ) {}
