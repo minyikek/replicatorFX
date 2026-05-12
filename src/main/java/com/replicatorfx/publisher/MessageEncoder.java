@@ -30,10 +30,17 @@ public final class MessageEncoder {
     }
 
     public int encode(GbmTick tick) {
-        long   now        = System.nanoTime();
-        double halfSpread = tick.spreadPips() * tick.pipSize() / 2.0;
-        double bid        = tick.mid() - halfSpread;
-        double ask        = tick.mid() + halfSpread;
+        long now   = System.nanoTime();
+        long scale = pow10(tick.decimalPlaces());
+
+        // Fixed-point half-spread: spreadPips × pipSize expressed in scaled integer units
+        long halfSpreadFP = Math.round(tick.spreadPips() * tick.pipSize() * scale / 2.0);
+        long bidFP        = tick.mid() - halfSpreadFP;
+        long askFP        = tick.mid() + halfSpreadFP;
+
+        // Convert to double, rounded to decimalPlaces, before publishing via Aeron
+        double bid = roundToDecimalPlaces(bidFP / (double) scale, tick.decimalPlaces());
+        double ask = roundToDecimalPlaces(askFP / (double) scale, tick.decimalPlaces());
 
         String bidEntryId = UUID.randomUUID().toString();
         String askEntryId = UUID.randomUUID().toString();
@@ -86,6 +93,17 @@ public final class MessageEncoder {
 
     public MutableDirectBuffer buffer() {
         return buffer;
+    }
+
+    private static double roundToDecimalPlaces(double value, int decimalPlaces) {
+        double scale = pow10(decimalPlaces);
+        return Math.round(value * scale) / scale;
+    }
+
+    private static long pow10(int n) {
+        long result = 1L;
+        for (int i = 0; i < n; i++) result *= 10L;
+        return result;
     }
 
     private static byte[] toFixedBytes(String value, int targetLen) {

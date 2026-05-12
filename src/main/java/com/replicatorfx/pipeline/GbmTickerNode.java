@@ -60,15 +60,21 @@ public final class GbmTickerNode implements EventDispatcher<GbmTick>, Runnable, 
                 long       intervalNs = (long) (config.tickIntervalMs * 1_000_000.0);
 
                 if (now - state.lastTickNano >= intervalNs) {
-                    long processTime   = System.nanoTime();
-                    state.currentMid   = gbm.nextPrice(state.currentMid, config);
+                    long   processTime = System.nanoTime();
+                    long   scale       = pow10(config.decimalPlaces);
+                    // GBM operates in real-valued space; convert fixed-point → double → fixed-point
+                    double midDouble   = state.currentMid / (double) scale;
+                    double newDouble   = gbm.nextPrice(midDouble, config);
+                    long   newMidFP    = Math.round(newDouble * scale);
+                    state.currentMid   = newMidFP;
                     state.lastTickNano = now;
 
                     dispatch(new GbmTick(
                         config.ccyPair,
                         config.instrument,
                         config.lpName,
-                        state.currentMid,
+                        newMidFP,
+                        config.decimalPlaces,
                         config.spreadPips,
                         config.pipSize,
                         config.bidSize,
@@ -90,5 +96,11 @@ public final class GbmTickerNode implements EventDispatcher<GbmTick>, Runnable, 
     @Override
     public void close() {
         running = false;
+    }
+
+    private static long pow10(int n) {
+        long result = 1L;
+        for (int i = 0; i < n; i++) result *= 10L;
+        return result;
     }
 }
