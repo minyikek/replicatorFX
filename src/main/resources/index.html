@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReplicatorFX Config</title>
+  <script src="https://unpkg.com/lightweight-charts@4.2.2/dist/lightweight-charts.standalone.production.js"></script>
+  <style>
+    :root {
+      --bg:       #131722;
+      --card:     #1e2130;
+      --border:   #2a2e39;
+      --text:     #d1d4dc;
+      --dim:      #787b86;
+      --green:    #26a69a;
+      --red:      #ef5350;
+      --blue:     #2196f3;
+      --blue-dk:  #1565c0;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif; font-size: 13px; line-height: 1.4; }
+
+    /* ── Header ── */
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 20px;
+      background: var(--card); border-bottom: 1px solid var(--border);
+    }
+    .logo { font-size: 14px; font-weight: 700; letter-spacing: 0.5px; color: var(--blue); }
+    #conn-badge {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 11px; color: var(--dim);
+    }
+    #conn-dot {
+      width: 7px; height: 7px; border-radius: 50%; background: #ffb74d;
+      transition: background 0.3s;
+    }
+    #conn-dot.ok  { background: var(--green); }
+    #conn-dot.err { background: var(--red); }
+
+    /* ── Pair tabs ── */
+    #pair-tabs {
+      display: flex; align-items: center; gap: 10px; padding: 7px 16px;
+      background: var(--card); border-bottom: 1px solid var(--border);
+    }
+    #tab-search-wrap {
+      display: flex; align-items: center; gap: 5px; flex-shrink: 0;
+      background: var(--bg); border: 1px solid var(--border); border-radius: 5px;
+      padding: 4px 8px; transition: border-color .15s;
+    }
+    #tab-search-wrap:focus-within { border-color: var(--blue); }
+    #tab-search-icon { color: var(--dim); font-size: 15px; line-height: 1; user-select: none; }
+    #pair-search {
+      background: transparent; border: none; color: var(--text);
+      font-size: 12px; outline: none; width: 120px;
+    }
+    #pair-search::placeholder { color: var(--dim); }
+    kbd#search-kbd {
+      font-size: 10px; color: var(--dim); background: var(--border);
+      border-radius: 3px; padding: 1px 5px; font-family: inherit;
+      transition: opacity .15s;
+    }
+    #tab-search-wrap:focus-within kbd#search-kbd { opacity: 0; pointer-events: none; }
+    #tab-list {
+      display: flex; gap: 4px; overflow-x: auto; scrollbar-width: thin; flex: 1;
+    }
+    .tab {
+      padding: 5px 14px; border-radius: 4px; border: 1px solid var(--border);
+      background: transparent; color: var(--dim); cursor: pointer;
+      font-size: 12px; font-weight: 500; white-space: nowrap;
+      transition: border-color .15s, color .15s, background .15s;
+    }
+    .tab:hover  { border-color: var(--blue); color: var(--text); }
+    .tab.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+    .tab.hidden { display: none; }
+
+    /* ── Price + chart card ── */
+    #price-card {
+      margin: 12px 20px;
+      background: var(--card); border: 1px solid var(--border); border-radius: 6px;
+      padding: 14px 16px;
+    }
+    #price-row {
+      display: flex; align-items: center; gap: 32px; margin-bottom: 14px;
+    }
+    #pair-label { font-size: 20px; font-weight: 700; min-width: 100px; }
+    .px-box { display: flex; flex-direction: column; }
+    .px-lbl { font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--dim); text-transform: uppercase; margin-bottom: 1px; }
+    .px-val { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.5px; }
+    .px-val.bid { color: var(--green); }
+    .px-val.ask { color: var(--red); }
+    td.bid { color: var(--green); }
+    td.ask { color: var(--red); }
+    #chart-outer { position: relative; }
+    #chart-wrap  { height: 300px; }
+    #live-btn {
+      position: absolute; top: 8px; right: 8px; z-index: 10;
+      background: var(--blue); color: #fff; border: none; border-radius: 4px;
+      padding: 4px 10px; font-size: 11px; font-weight: 600; cursor: pointer;
+      opacity: 0.9; transition: opacity .15s;
+    }
+    #live-btn:hover { opacity: 1; }
+    #live-btn.hidden { display: none; }
+
+    /* ── Rates overview card ── */
+    #rates-card {
+      margin: 0 20px 12px;
+      background: var(--card); border: 1px solid var(--border); border-radius: 6px;
+      overflow: hidden;
+    }
+    #rates-hdr {
+      display: flex; align-items: center; padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    #rates-hdr h2 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--dim); }
+
+    /* ── Pairs table card ── */
+    #pairs-card {
+      margin: 0 20px 20px;
+      background: var(--card); border: 1px solid var(--border); border-radius: 6px;
+      overflow: hidden;
+    }
+    #pairs-hdr {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px; border-bottom: 1px solid var(--border);
+    }
+    #pairs-hdr h2 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--dim); }
+
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      padding: 7px 12px; text-align: left;
+      font-size: 10px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;
+      color: var(--dim); border-bottom: 1px solid var(--border);
+    }
+    td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+    tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: rgba(255,255,255,0.025); }
+    .bold { font-weight: 600; }
+    .mono { font-family: 'Consolas', 'Monaco', monospace; }
+    .dim  { color: var(--dim); }
+    .empty-row td { text-align: center; color: var(--dim); padding: 24px; }
+
+    /* ── Buttons ── */
+    .btn {
+      padding: 5px 12px; border-radius: 4px; border: 1px solid transparent;
+      cursor: pointer; font-size: 11px; font-weight: 500; transition: all .15s;
+    }
+    .btn-primary  { background: var(--blue); color: #fff; border-color: var(--blue); }
+    .btn-primary:hover  { background: var(--blue-dk); border-color: var(--blue-dk); }
+    .btn-ghost    { background: transparent; color: var(--text); border-color: var(--border); }
+    .btn-ghost:hover    { border-color: var(--blue); color: var(--blue); }
+    .btn-danger   { background: transparent; color: var(--red); border-color: var(--red); }
+    .btn-danger:hover   { background: var(--red); color: #fff; }
+    .btn + .btn { margin-left: 4px; }
+
+    /* ── Modal ── */
+    #overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.55); z-index: 100;
+      align-items: center; justify-content: center;
+    }
+    #overlay.open { display: flex; }
+    .modal {
+      background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+      padding: 22px 24px; width: 500px; max-width: 94vw; max-height: 90vh; overflow-y: auto;
+    }
+    .modal h3 { font-size: 14px; font-weight: 600; margin-bottom: 18px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; margin-bottom: 6px; }
+    .fg { display: flex; flex-direction: column; gap: 4px; }
+    .fg.span2 { grid-column: span 2; }
+    label { font-size: 10px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: var(--dim); }
+    input[type=text], input[type=number] {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 4px;
+      color: var(--text); padding: 6px 9px; font-size: 12px; outline: none;
+      transition: border-color .15s; width: 100%;
+    }
+    input:focus { border-color: var(--blue); }
+    input:disabled { opacity: 0.45; cursor: not-allowed; }
+    input.bad { border-color: var(--red); }
+    .hint { font-size: 10px; color: var(--dim); margin-bottom: 14px; min-height: 14px; }
+    .modal-foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+
+    /* ── Toasts ── */
+    #toasts {
+      position: fixed; bottom: 18px; right: 18px; z-index: 200;
+      display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+    }
+    .toast {
+      background: var(--card); border: 1px solid var(--border);
+      border-left: 3px solid var(--blue); border-radius: 6px;
+      padding: 10px 12px; min-width: 260px; max-width: 340px;
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
+      pointer-events: all;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+      animation: toastIn .2s ease;
+    }
+    @keyframes toastIn { from { transform: translateX(110%); opacity: 0; } to { transform: none; opacity: 1; } }
+    .toast-body { flex: 1; }
+    .toast-msg  { font-size: 12px; margin-bottom: 2px; }
+    .toast-time { font-size: 10px; color: var(--dim); }
+    .toast-x    { background: none; border: none; color: var(--dim); cursor: pointer; font-size: 16px; line-height: 1; flex-shrink: 0; padding: 0 2px; }
+    .toast-x:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">⬡ ReplicatorFX</div>
+  <div id="conn-badge"><span id="conn-dot"></span><span id="conn-txt">Connecting…</span></div>
+</header>
+
+<div id="pair-tabs">
+  <div id="tab-search-wrap">
+    <span id="tab-search-icon">⌕</span>
+    <input id="pair-search" type="text" placeholder="Search pairs…" autocomplete="off" spellcheck="false">
+    <kbd id="search-kbd">/</kbd>
+  </div>
+  <div id="tab-list"></div>
+</div>
+
+<div id="price-card">
+  <div id="price-row">
+    <div id="pair-label">—</div>
+    <div class="px-box"><div class="px-lbl">Bid</div><div class="px-val bid" id="v-bid">—</div></div>
+    <div class="px-box"><div class="px-lbl">Ask</div><div class="px-val ask" id="v-ask">—</div></div>
+    <div class="px-box"><div class="px-lbl">Mid</div><div class="px-val" id="v-mid">—</div></div>
+  </div>
+  <div id="chart-outer">
+    <div id="chart-wrap"></div>
+    <button id="live-btn" class="hidden" onclick="snapToLive()">▶ Live</button>
+  </div>
+</div>
+
+<div id="rates-card">
+  <div id="rates-hdr"><h2>Live Rates</h2></div>
+  <table>
+    <thead>
+      <tr><th>Pair</th><th>Bid</th><th>Ask</th><th>Spread</th><th>Rate ID</th><th>Updated</th></tr>
+    </thead>
+    <tbody id="rates-tbl"></tbody>
+  </table>
+</div>
+
+<div id="pairs-card">
+  <div id="pairs-hdr">
+    <h2>Pairs</h2>
+    <button class="btn btn-primary" onclick="openAdd()">+ Add Pair</button>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Pair</th><th>LP</th><th>Mid Price</th><th>Spread (pips)</th>
+        <th>Volatility</th><th>Drift</th><th>Tick (ms)</th><th>Bid / Ask Size</th><th></th>
+      </tr>
+    </thead>
+    <tbody id="tbl"></tbody>
+  </table>
+</div>
+
+<!-- Modal -->
+<div id="overlay">
+  <div class="modal">
+    <h3 id="modal-title">Add Pair</h3>
+    <div class="form-grid">
+      <div class="fg"><label>Currency Pair *</label><input id="f-ccy" type="text" placeholder="e.g. EUR/USD"></div>
+      <div class="fg"><label>LP Name *</label><input id="f-lp" type="text" placeholder="e.g. SIMLP1"></div>
+      <div class="fg"><label>Mid Price *</label><input id="f-mid" type="number" step="any" placeholder="e.g. 1.08500"></div>
+      <div class="fg"><label>Decimal Places</label><input id="f-dp" type="number" min="0" max="8" placeholder="5"></div>
+      <div class="fg"><label>Volatility</label><input id="f-vol" type="number" step="any" placeholder="0.10"></div>
+      <div class="fg"><label>Drift</label><input id="f-drift" type="number" step="any" placeholder="0.0"></div>
+      <div class="fg"><label>Spread (pips)</label><input id="f-spread" type="number" step="any" placeholder="2.0"></div>
+      <div class="fg"><label>Pip Size</label><input id="f-pip" type="number" step="any" placeholder="0.00001"></div>
+      <div class="fg"><label>Tick Interval (ms)</label><input id="f-tick" type="number" step="any" placeholder="100"></div>
+      <div class="fg"><label>Instrument</label><input id="f-inst" type="text" placeholder="SPOT"></div>
+      <div class="fg"><label>Bid Size</label><input id="f-bid" type="number" step="any" placeholder="1000000"></div>
+      <div class="fg"><label>Ask Size</label><input id="f-ask" type="number" step="any" placeholder="1000000"></div>
+    </div>
+    <div class="hint" id="modal-hint"></div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitModal()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+let pairs      = [];
+let activePair = null;
+const book     = {}; // { pair: { bidData:[], askData:[], latest:null } }
+const MAX_PTS  = 500;
+let modalMode  = 'add';
+
+// ── Chart ─────────────────────────────────────────────────────────────────────
+const chartWrap = document.getElementById('chart-wrap');
+const chart = LightweightCharts.createChart(chartWrap, {
+  height: 300,
+  layout: { background: { color: '#1e2130' }, textColor: '#d1d4dc' },
+  grid:   { vertLines: { color: '#2a2e39' }, horzLines: { color: '#2a2e39' } },
+  crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+  rightPriceScale: { borderColor: '#2a2e39', visible: true, borderVisible: true, ticksVisible: true },
+  timeScale: { borderColor: '#2a2e39', timeVisible: true, secondsVisible: true },
+  handleScroll: true, handleScale: true,
+});
+const bidLine = chart.addLineSeries({ color: '#26a69a', lineWidth: 1, title: 'Bid' });
+const askLine = chart.addLineSeries({ color: '#ef5350', lineWidth: 1, title: 'Ask' });
+
+// Resize chart with container
+new ResizeObserver(() => {
+  chart.applyOptions({ width: chartWrap.clientWidth });
+}).observe(chartWrap);
+
+// Track whether the user has scrolled away from the live edge
+let isFollowing = true;
+chart.timeScale().subscribeVisibleLogicalRangeChange(range => {
+  if (!range) return;
+  const info = bidLine.barsInLogicalRange(range);
+  // barsAfter > 0 means there are newer bars not visible — user scrolled into the past
+  const atEdge = !info || info.barsAfter <= 0;
+  if (atEdge !== isFollowing) {
+    isFollowing = atEdge;
+    document.getElementById('live-btn').classList.toggle('hidden', isFollowing);
+  }
+});
+
+function snapToLive() {
+  isFollowing = true;
+  document.getElementById('live-btn').classList.add('hidden');
+  chart.timeScale().scrollToRealTime();
+}
+
+// ── SSE connection ─────────────────────────────────────────────────────────────
+function connectSSE() {
+  const es = new EventSource('/events');
+
+  es.addEventListener('tick', e => {
+    const t = JSON.parse(e.data);
+    onTick(t);
+  });
+
+  es.addEventListener('cfg', e => {
+    const d = JSON.parse(e.data);
+    toast(d.msg);
+    // Reload table and tabs so all users see the updated config
+    loadPairs();
+  });
+
+  es.onopen  = () => setConn(true);
+  es.onerror = () => setConn(false); // EventSource auto-reconnects
+}
+
+function setConn(ok) {
+  document.getElementById('conn-dot').className = ok ? 'ok' : 'err';
+  document.getElementById('conn-txt').textContent = ok ? 'Connected' : 'Reconnecting…';
+}
+
+// ── Tick handling ──────────────────────────────────────────────────────────────
+function onTick({ pair, bid, ask, mid, ts, rateId }) {
+  if (!book[pair]) book[pair] = { bidData: [], askData: [], latest: null };
+  const b = book[pair];
+  b.latest = { pair, bid, ask, mid, ts, rateId };
+
+  // 1-second resolution for chart (LWC requires integer UTC seconds)
+  const t = Math.floor(ts / 1000);
+  const last = b.bidData[b.bidData.length - 1];
+  if (!last || last.time < t) {
+    b.bidData.push({ time: t, value: bid });
+    b.askData.push({ time: t, value: ask });
+    if (b.bidData.length > MAX_PTS) { b.bidData.shift(); b.askData.shift(); }
+    if (pair === activePair) {
+      bidLine.update({ time: t, value: bid });
+      askLine.update({ time: t, value: ask });
+      if (isFollowing) chart.timeScale().scrollToRealTime();
+    }
+  } else {
+    // Update current second's bar with the latest value
+    b.bidData[b.bidData.length - 1].value = bid;
+    b.askData[b.askData.length - 1].value = ask;
+    if (pair === activePair) {
+      bidLine.update({ time: t, value: bid });
+      askLine.update({ time: t, value: ask });
+    }
+  }
+
+  if (pair === activePair) showPrices(bid, ask, mid);
+  updateRatesRow(pair, bid, ask, rateId, ts);
+}
+
+// ── Rates overview table ───────────────────────────────────────────────────────
+function renderRatesTable() {
+  const tb = document.getElementById('rates-tbl');
+  tb.innerHTML = '';
+  pairs.forEach(p => {
+    const tr = document.createElement('tr');
+    tr.id = 'rr-' + CSS.escape(p.ccyPair);
+    tr.innerHTML = `
+      <td class="bold">${esc(p.ccyPair)}</td>
+      <td class="mono bid" id="rr-bid-${CSS.escape(p.ccyPair)}">—</td>
+      <td class="mono ask" id="rr-ask-${CSS.escape(p.ccyPair)}">—</td>
+      <td class="mono dim" id="rr-spd-${CSS.escape(p.ccyPair)}">—</td>
+      <td class="mono dim" id="rr-rid-${CSS.escape(p.ccyPair)}">—</td>
+      <td class="dim"      id="rr-ts-${CSS.escape(p.ccyPair)}">—</td>
+    `;
+    tb.appendChild(tr);
+    // Populate from cached data if already received ticks
+    const b = book[p.ccyPair];
+    if (b && b.latest) {
+      const { bid, ask, rateId, ts } = b.latest;
+      fillRatesRow(p, bid, ask, rateId, ts);
+    }
+  });
+}
+
+function updateRatesRow(pair, bid, ask, rateId, ts) {
+  const p = pairs.find(p => p.ccyPair === pair);
+  if (!p) return;
+  fillRatesRow(p, bid, ask, rateId, ts);
+}
+
+function fillRatesRow(p, bid, ask, rateId, ts) {
+  const key = CSS.escape(p.ccyPair);
+  const dp  = p.decimalPlaces;
+  const spreadPips = ((ask - bid) / p.pipSize).toFixed(1);
+  const time = new Date(ts).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3 });
+
+  setCell('rr-bid-' + key, bid.toFixed(dp));
+  setCell('rr-ask-' + key, ask.toFixed(dp));
+  setCell('rr-spd-' + key, spreadPips + ' pips');
+  setCell('rr-rid-' + key, rateId != null ? rateId : '—');
+  setCell('rr-ts-'  + key, time);
+
+}
+
+function setCell(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
+function showPrices(bid, ask, mid) {
+  const p  = pairs.find(p => p.ccyPair === activePair);
+  const dp = p ? p.decimalPlaces : 5;
+  document.getElementById('v-bid').textContent = bid.toFixed(dp);
+  document.getElementById('v-ask').textContent = ask.toFixed(dp);
+  document.getElementById('v-mid').textContent = mid.toFixed(dp);
+}
+
+// ── Pair tabs ─────────────────────────────────────────────────────────────────
+function renderTabs() {
+  const list = document.getElementById('tab-list');
+  list.innerHTML = '';
+  const q = (document.getElementById('pair-search').value || '').toLowerCase();
+  pairs.forEach(p => {
+    const btn = document.createElement('button');
+    const matches = !q || p.ccyPair.toLowerCase().includes(q);
+    btn.className = 'tab' + (p.ccyPair === activePair ? ' active' : '') + (matches ? '' : ' hidden');
+    btn.textContent = p.ccyPair;
+    btn.onclick = () => { switchPair(p.ccyPair); clearSearch(); };
+    list.appendChild(btn);
+  });
+}
+
+function clearSearch() {
+  const inp = document.getElementById('pair-search');
+  inp.value = '';
+  inp.blur();
+  renderTabs();
+}
+
+// Filter tabs as user types; Enter picks first match; Escape clears
+document.getElementById('pair-search').addEventListener('input', renderTabs);
+document.getElementById('pair-search').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const q = e.target.value.toLowerCase();
+    const match = pairs.find(p => p.ccyPair.toLowerCase().includes(q));
+    if (match) { switchPair(match.ccyPair); clearSearch(); }
+  } else if (e.key === 'Escape') {
+    clearSearch();
+  }
+});
+
+function switchPair(pair) {
+  activePair = pair;
+  document.getElementById('pair-label').textContent = pair;
+  renderTabs();
+
+  // Apply the pair's decimal precision to the chart axes
+  const p = pairs.find(p => p.ccyPair === pair);
+  if (p) {
+    const fmt = { type: 'price', precision: p.decimalPlaces, minMove: p.pipSize };
+    bidLine.applyOptions({ priceFormat: fmt });
+    askLine.applyOptions({ priceFormat: fmt });
+  }
+
+  const b = book[pair];
+  if (b && b.bidData.length) {
+    isFollowing = true;
+    document.getElementById('live-btn').classList.add('hidden');
+    bidLine.setData([...b.bidData]);
+    askLine.setData([...b.askData]);
+    chart.timeScale().scrollToRealTime();
+  } else {
+    bidLine.setData([]);
+    askLine.setData([]);
+  }
+
+  if (b && b.latest) showPrices(b.latest.bid, b.latest.ask, b.latest.mid);
+  else {
+    document.getElementById('v-bid').textContent = '—';
+    document.getElementById('v-ask').textContent = '—';
+    document.getElementById('v-mid').textContent = '—';
+  }
+}
+
+// ── Pairs table ───────────────────────────────────────────────────────────────
+function renderTable() {
+  const tb = document.getElementById('tbl');
+  if (!pairs.length) {
+    tb.innerHTML = '<tr class="empty-row"><td colspan="9">No pairs configured. Add one above.</td></tr>';
+    return;
+  }
+  tb.innerHTML = '';
+  pairs.forEach(p => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="bold">${esc(p.ccyPair)}</td>
+      <td class="dim">${esc(p.lpName)}</td>
+      <td class="mono">${p.initialMidPrice.toFixed(p.decimalPlaces)}</td>
+      <td>${p.spreadPips}</td>
+      <td>${p.volatility}</td>
+      <td>${p.drift}</td>
+      <td>${p.tickIntervalMs}</td>
+      <td class="dim">${fmtSize(p.bidSize)} / ${fmtSize(p.askSize)}</td>
+      <td></td>
+    `;
+    const actions = tr.lastElementChild;
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn btn-ghost';
+    editBtn.textContent = 'Edit';
+    editBtn.onclick = () => openEdit(p);
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn btn-danger';
+    delBtn.textContent = 'Delete';
+    delBtn.onclick = () => doDelete(p.ccyPair);
+    actions.append(editBtn, delBtn);
+    tb.appendChild(tr);
+  });
+}
+
+function fmtSize(n) {
+  if (n >= 1e6) return (n / 1e6).toFixed(n % 1e6 ? 1 : 0) + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(0) + 'K';
+  return n;
+}
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── REST ──────────────────────────────────────────────────────────────────────
+async function loadPairs() {
+  try {
+    const r = await fetch('/api/pairs');
+    const fresh = await r.json();
+    const wasActive = activePair;
+    pairs = fresh;
+    renderTabs();
+    renderTable();
+    renderRatesTable();
+    if (!pairs.length) {
+      activePair = null;
+      bidLine.setData([]); askLine.setData([]);
+      document.getElementById('pair-label').textContent = '—';
+    } else if (!activePair || !pairs.find(p => p.ccyPair === activePair)) {
+      switchPair(pairs[0].ccyPair);
+    }
+  } catch (e) {
+    console.error('loadPairs failed', e);
+  }
+}
+
+async function doDelete(ccyPair) {
+  if (!confirm(`Delete ${ccyPair}?`)) return;
+  const r = await fetch('/api/pairs?pair=' + encodeURIComponent(ccyPair), { method: 'DELETE' });
+  if (!r.ok) { const d = await r.json(); alert('Error: ' + d.error); }
+  // Table will refresh via the incoming SSE cfg event
+}
+
+// ── Modal ──────────────────────────────────────────────────────────────────────
+function openAdd() {
+  modalMode = 'add';
+  document.getElementById('modal-title').textContent = 'Add Pair';
+  document.getElementById('modal-hint').textContent = '';
+  clearForm();
+  setVal('f-inst',   'SPOT');
+  setVal('f-dp',     '5');
+  setVal('f-vol',    '0.10');
+  setVal('f-drift',  '0.0');
+  setVal('f-spread', '2.0');
+  setVal('f-pip',    '0.00001');
+  setVal('f-tick',   '100');
+  setVal('f-bid',    '1000000');
+  setVal('f-ask',    '1000000');
+  el('f-ccy').disabled = false;
+  openModal();
+  el('f-ccy').focus();
+}
+
+function openEdit(p) {
+  modalMode = 'edit';
+  document.getElementById('modal-title').textContent = 'Edit ' + p.ccyPair;
+  document.getElementById('modal-hint').textContent =
+    'Mid Price only resets when a pair is first created or the app restarts.';
+  setVal('f-ccy',    p.ccyPair);
+  setVal('f-lp',     p.lpName);
+  setVal('f-mid',    p.initialMidPrice);
+  setVal('f-dp',     p.decimalPlaces);
+  setVal('f-vol',    p.volatility);
+  setVal('f-drift',  p.drift);
+  setVal('f-spread', p.spreadPips);
+  setVal('f-pip',    p.pipSize);
+  setVal('f-tick',   p.tickIntervalMs);
+  setVal('f-inst',   p.instrument);
+  setVal('f-bid',    p.bidSize);
+  setVal('f-ask',    p.askSize);
+  el('f-ccy').disabled = true;
+  openModal();
+}
+
+function openModal() { el('overlay').classList.add('open'); }
+function closeModal() { el('overlay').classList.remove('open'); }
+
+function clearForm() {
+  ['f-ccy','f-lp','f-mid','f-dp','f-vol','f-drift','f-spread','f-pip','f-tick','f-inst','f-bid','f-ask']
+    .forEach(id => { setVal(id, ''); el(id).classList.remove('bad'); });
+}
+
+async function submitModal() {
+  const ccy = el('f-ccy').value.trim();
+  const lp  = el('f-lp').value.trim();
+  const mid = parseFloat(el('f-mid').value);
+
+  if (!ccy)                         { flash('f-ccy'); return; }
+  if (!lp)                          { flash('f-lp');  return; }
+  if (isNaN(mid) || mid <= 0)       { flash('f-mid'); return; }
+
+  const body = {
+    ccyPair:        ccy,
+    lpName:         lp,
+    initialMidPrice: mid,
+    decimalPlaces:  parseInt(el('f-dp').value)     || 5,
+    volatility:     parseFloat(el('f-vol').value)  || 0.10,
+    drift:          parseFloat(el('f-drift').value)|| 0.0,
+    spreadPips:     parseFloat(el('f-spread').value)|| 2.0,
+    pipSize:        parseFloat(el('f-pip').value)  || 0.00001,
+    tickIntervalMs: parseFloat(el('f-tick').value) || 100,
+    instrument:     el('f-inst').value.trim() || 'SPOT',
+    bidSize:        parseFloat(el('f-bid').value)  || 1000000,
+    askSize:        parseFloat(el('f-ask').value)  || 1000000,
+  };
+
+  const method = modalMode === 'add' ? 'POST' : 'PUT';
+  const r = await fetch('/api/pairs', {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  if (r.ok) {
+    closeModal();
+    // Table will refresh via the incoming SSE cfg event
+  } else {
+    const d = await r.json().catch(() => ({ error: 'Unknown error' }));
+    alert('Error: ' + d.error);
+  }
+}
+
+// ── Toasts ────────────────────────────────────────────────────────────────────
+function toast(msg) {
+  const c = document.getElementById('toasts');
+  const d = document.createElement('div');
+  d.className = 'toast';
+  d.innerHTML = `
+    <div class="toast-body">
+      <div class="toast-msg">${esc(msg)}</div>
+      <div class="toast-time">${new Date().toLocaleTimeString()}</div>
+    </div>
+    <button class="toast-x" title="Dismiss">×</button>
+  `;
+  d.querySelector('.toast-x').onclick = () => d.remove();
+  c.appendChild(d);
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+const el  = id => document.getElementById(id);
+const setVal = (id, v) => { el(id).value = v; };
+function flash(id) {
+  const i = el(id);
+  i.classList.add('bad');
+  i.focus();
+  setTimeout(() => i.classList.remove('bad'), 1800);
+}
+
+// ── Keyboard / click outside modal ────────────────────────────────────────────
+el('overlay').addEventListener('click', e => { if (e.target === el('overlay')) closeModal(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+  // Press / to jump to pair search (unless already typing in an input or modal is open)
+  if (e.key === '/' && !el('overlay').classList.contains('open') &&
+      document.activeElement.tagName !== 'INPUT' &&
+      document.activeElement.tagName !== 'TEXTAREA') {
+    e.preventDefault();
+    el('pair-search').focus();
+    el('pair-search').select();
+  }
+});
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+connectSSE();
+loadPairs();
+</script>
+</body>
+</html>

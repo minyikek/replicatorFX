@@ -3,6 +3,7 @@ package com.replicatorfx;
 import com.replicatorfx.config.ConfigLoader;
 import com.replicatorfx.config.ConfigWatcher;
 import com.replicatorfx.config.SimulatorConfig;
+import com.replicatorfx.http.ConfigHttpServer;
 import com.replicatorfx.pipeline.GbmTickerNode;
 import com.replicatorfx.pipeline.PublisherNode;
 import com.replicatorfx.publisher.AeronPublisher;
@@ -11,6 +12,7 @@ import com.replicatorfx.simulator.ValueDateCalculator;
 import org.agrona.CloseHelper;
 
 import java.nio.file.Path;
+import java.util.concurrent.atomic.AtomicReference;
 
 public final class Main {
 
@@ -19,15 +21,10 @@ public final class Main {
 
         SimulatorConfig config = ConfigLoader.load(configPath);
 
-        AeronPublisher publisher = new AeronPublisher(config);
-        MessageEncoder encoder   = new MessageEncoder(config.global, ValueDateCalculator.spotValueDate());
+        GbmTickerNode tickerNode = new GbmTickerNode(config);
 
-        GbmTickerNode  tickerNode    = new GbmTickerNode(config);
-        PublisherNode  publisherNode = new PublisherNode(encoder, publisher);
-
-        // Wire pipeline: ticker → [Disruptor ring buffer] → publisher
-        publisherNode.subscribe1(tickerNode);
-        publisherNode.start();
+        // HTTP config UI starts immediately — does not depend on Aeron being ready
+        ConfigHttpServer httpServer = new ConfigHttpServer(configPath, tickerNode);
 
         // Config hot-reload feeds directly into the ticker node
         ConfigWatcher watcher     = new ConfigWatcher(configPath, tickerNode::onConfig);
@@ -36,22 +33,41 @@ public final class Main {
 
         Thread tickerThread = new Thread(tickerNode, "rate-ticker");
 
+        // AeronPublisher blocks in awaitConnected() until a subscriber joins.
+        // Run it on a daemon thread so the UI and ticker are not held up.
+        AtomicReference<AeronPublisher> pubRef = new AtomicReference<>();
+        Thread aeronInit = new Thread(() -> {
+            try {
+                AeronPublisher publisher = new AeronPublisher(config);
+                pubRef.set(publisher);
+                MessageEncoder encoder    = new MessageEncoder(config.global, ValueDateCalculator.spotValueDate());
+                PublisherNode  pubNode    = new PublisherNode(encoder, publisher);
+                pubNode.subscribe1(tickerNode);
+                pubNode.start();
+                System.out.println("[main] Aeron pipeline ready");
+            } catch (Exception e) {
+                System.err.println("[main] Aeron init failed: " + e.getMessage());
+            }
+        }, "aeron-init");
+        aeronInit.setDaemon(true);
+
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("\n[main] shutdown requested");
             tickerNode.close();
-            CloseHelper.quietClose(publisher);
+            AeronPublisher pub = pubRef.get();
+            if (pub != null) CloseHelper.quietClose(pub);
+            httpServer.close();
         }, "shutdown-hook"));
 
         System.out.printf("[main] pipeline started | channel=%s stream=%d | %d pair(s)%n",
             config.aeron.channel, config.aeron.streamId, config.pairs.size());
-        System.out.printf("[main] edit %s to add/remove/tune pairs at runtime%n",
-            configPath.toAbsolutePath());
 
         watchThread.start();
+        aeronInit.start();
         tickerThread.start();
         tickerThread.join();
 
-        publisher.close();
         watcher.close();
+        httpServer.close();
     }
 }

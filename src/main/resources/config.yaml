@@ -1,62 +1,81 @@
 aeron:
-  channel: "aeron:ipc"
+  channel: aeron:ipc
   streamId: 1
-
 global:
-  fixSession:   "FX-SIM-SESSION"
-  takerCompID:  "TAKER001"
-  senderCompID: "SENDER001"
-  sourceSystem: "REPLICATORFX"
-
+  fixSession: FX-SIM-SESSION
+  takerCompID: TAKER001
+  senderCompID: SENDER001
+  sourceSystem: REPLICATORFX
 pairs:
-  - ccyPair:         "EUR/USD"
-    instrument:      "SPOT"
-    lpName:          "SIMLP1"
-    initialMidPrice: 108500   # fixed-point long: 1.08500 × 10^5
-    decimalPlaces:   5
-    volatility:      0.10     # ~1 pip/tick at 100ms; multiply by ~13 for 0.5ms ticks
-    drift:           0.0      # neutral — no directional bias
-    spreadPips:      2.0
-    pipSize:         0.00001  # 1 pip = 0.00001 (standard FX major)
-    tickIntervalMs:  100.0
-    bidSize:         1000000.0
-    askSize:         1000000.0
-
-  - ccyPair:         "GBP/USD"
-    instrument:      "SPOT"
-    lpName:          "SIMLP2"
-    initialMidPrice: 127000   # fixed-point long: 1.27000 × 10^5
-    decimalPlaces:   5
-    volatility:      0.12     # GBP/USD naturally more volatile
-    drift:           0.02     # slight uptrend
-    spreadPips:      2.5
-    pipSize:         0.00001  # 1 pip = 0.00001
-    tickIntervalMs:  100.0
-    bidSize:         1000000.0
-    askSize:         1000000.0
-
-  - ccyPair:         "USD/JPY"
-    instrument:      "SPOT"
-    lpName:          "SIMLP3"
-    initialMidPrice: 149500   # fixed-point long: 149.500 × 10^3
-    decimalPlaces:   3
-    volatility:      0.50
-    drift:           0.1      # slight uptrend (JPY weakening)
-    spreadPips:      3.0
-    pipSize:         0.01     # 1 pip = 0.01 (JPY pairs)
-    tickIntervalMs:  100.0
-    bidSize:         1000000.0
-    askSize:         1000000.0
-
-  - ccyPair:         "XAU/USD"
-    instrument:      "SPOT"
-    lpName:          "SIMLP4"
-    initialMidPrice: 235000   # fixed-point long: 2350.00 × 10^2
-    decimalPlaces:   2
-    volatility:      0.15     # gold is more volatile than FX
-    drift:           0.03
-    spreadPips:      5.0
-    pipSize:         0.01     # 1 pip = 0.01 (gold)
-    tickIntervalMs:  100.0
-    bidSize:         100.0
-    askSize:         100.0
+- ccyPair: EUR/USD
+  instrument: SPOT
+  lpName: SIMLP1
+  initialMidPrice: 108512
+  decimalPlaces: 5
+  volatility: 0.6
+  drift: 0.3
+  spreadPips: 2.0
+  pipSize: 1.0E-5
+  tickIntervalMs: 500.0
+  bidSize: 1000000.0
+  askSize: 1000000.0
+- ccyPair: GBP/USD
+  instrument: SPOT
+  lpName: SIMLP2
+  initialMidPrice: 127000
+  decimalPlaces: 5
+  volatility: 0.12
+  drift: 0.02
+  spreadPips: 2.5
+  pipSize: 1.0E-5
+  tickIntervalMs: 1000.0
+  bidSize: 1000000.0
+  askSize: 1000000.0
+- ccyPair: USD/JPY
+  instrument: SPOT
+  lpName: SIMLP3
+  initialMidPrice: 149500
+  decimalPlaces: 3
+  volatility: 0.5
+  drift: 0.1
+  spreadPips: 3.0
+  pipSize: 0.01
+  tickIntervalMs: 100.0
+  bidSize: 1000000.0
+  askSize: 1000000.0
+- ccyPair: XAU/USD
+  instrument: SPOT
+  lpName: SIMLP4
+  initialMidPrice: 235000
+  decimalPlaces: 2
+  volatility: 0.15
+  drift: 0.03
+  spreadPips: 5.0
+  pipSize: 0.01
+  tickIntervalMs: 100.0
+  bidSize: 100.0
+  askSize: 100.0
+- ccyPair: SGD/JPY
+  instrument: SPOT
+  lpName: HEHEFX
+  initialMidPrice: 12345
+  decimalPlaces: 2
+  volatility: 0.1
+  drift: 0.01
+  spreadPips: 5.0
+  pipSize: 0.01
+  tickIntervalMs: 1000.0
+  bidSize: 1000000.0
+  askSize: 1000000.0
+- ccyPair: USD/SGD
+  instrument: SPOT
+  lpName: HEHEFX
+  initialMidPrice: 12712
+  decimalPlaces: 4
+  volatility: 0.1
+  drift: 0.01
+  spreadPips: 5.0
+  pipSize: 1.0E-4
+  tickIntervalMs: 1000.0
+  bidSize: 1000000.0
+  askSize: 1000000.0
