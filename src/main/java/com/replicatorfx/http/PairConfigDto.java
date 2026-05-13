@@ -15,8 +15,9 @@ public class PairConfigDto {
     public double spreadPips;
     public double pipSize;
     public double tickIntervalMs;
-    public double bidSize;
-    public double askSize;
+    public double  bidSize;
+    public double  askSize;
+    public boolean enabled = true;
 
     public static PairConfigDto from(PairConfig pc) {
         PairConfigDto d    = new PairConfigDto();
@@ -32,6 +33,7 @@ public class PairConfigDto {
         d.tickIntervalMs   = pc.tickIntervalMs;
         d.bidSize          = pc.bidSize;
         d.askSize          = pc.askSize;
+        d.enabled          = pc.enabled;
         return d;
     }
 
@@ -49,6 +51,7 @@ public class PairConfigDto {
         pc.tickIntervalMs  = this.tickIntervalMs;
         pc.bidSize         = this.bidSize;
         pc.askSize         = this.askSize;
+        pc.enabled         = this.enabled;
         return pc;
     }
 

@@ -39,6 +39,10 @@ public final class GbmTickerNode implements EventDispatcher<GbmTick>, Runnable, 
         for (PairConfig pc : newConfig.pairs) {
             PairState existing = pairs.get(pc.ccyPair);
             if (existing != null) {
+                PairConfig old = existing.config.get();
+                if (old.initialMidPrice != pc.initialMidPrice) {
+                    existing.currentMid = pc.initialMidPrice;
+                }
                 existing.config.set(pc);
             } else {
                 pairs.put(pc.ccyPair, new PairState(pc));
@@ -66,6 +70,10 @@ public final class GbmTickerNode implements EventDispatcher<GbmTick>, Runnable, 
                 long       intervalNs = (long) (config.tickIntervalMs * 1_000_000.0);
 
                 if (now - state.lastTickNano >= intervalNs) {
+                    state.lastTickNano = now; // advance always — prevents tick burst on re-enable
+
+                    if (!config.enabled) continue;
+
                     long   processTime  = System.nanoTime();
                     long   timestampMs  = System.currentTimeMillis();
                     long   scale       = pow10(config.decimalPlaces);
@@ -74,7 +82,10 @@ public final class GbmTickerNode implements EventDispatcher<GbmTick>, Runnable, 
                     double newDouble   = gbm.nextPrice(midDouble, config);
                     long   newMidFP    = Math.round(newDouble * scale);
                     state.currentMid   = newMidFP;
-                    state.lastTickNano = now;
+
+                    long rateId = rateCounters
+                        .computeIfAbsent(config.ccyPair, k -> new AtomicLong(0))
+                        .incrementAndGet();
 
                     long rateId = rateCounters
                         .computeIfAbsent(config.ccyPair, k -> new AtomicLong(0))

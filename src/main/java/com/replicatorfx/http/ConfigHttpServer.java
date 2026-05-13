@@ -41,9 +41,10 @@ public class ConfigHttpServer implements Closeable {
 
         // More-specific contexts must be registered before the catch-all "/"
         server = HttpServer.create(new InetSocketAddress(PORT), 50);
-        server.createContext("/events",    this::handleSSE);
-        server.createContext("/api/pairs", this::handlePairs);
-        server.createContext("/",          this::serveIndex);
+        server.createContext("/events",           this::handleSSE);
+        server.createContext("/api/pairs/toggle", this::togglePair);
+        server.createContext("/api/pairs",        this::handlePairs);
+        server.createContext("/",                 this::serveIndex);
         server.setExecutor(Executors.newCachedThreadPool());
 
         // Non-blocking offer — the hot loop is never delayed by the UI
@@ -109,8 +110,8 @@ public class ConfigHttpServer implements Closeable {
         pushSSE("tick", json);
     }
 
-    public void broadcastConfigChanged(String message) {
-        pushSSE("cfg", "{\"msg\":" + toJsonStr(message) + "}");
+    private void pushCfgEvent(Map<String, Object> payload) throws IOException {
+        pushSSE("cfg", jackson.writeValueAsString(payload));
     }
 
     private void pushSSE(String event, String data) {
@@ -176,12 +177,22 @@ public class ConfigHttpServer implements Closeable {
         } finally {
             writeLock.unlock();
         }
-        broadcastConfigChanged("Pair added: " + dto.ccyPair);
+        Map<String, Object> ev = new LinkedHashMap<>();
+        ev.put("action", "added");
+        ev.put("pair", dto.ccyPair);
+        Map<String, String> cfgMap = new LinkedHashMap<>();
+        cfgMap.put("Mid",    String.format("%." + dto.decimalPlaces + "f", dto.initialMidPrice));
+        cfgMap.put("Spread", dto.spreadPips + " pips");
+        cfgMap.put("Tick",   dto.tickIntervalMs + "ms");
+        if (dto.lpName != null && !dto.lpName.isBlank()) cfgMap.put("LP", dto.lpName);
+        ev.put("config", cfgMap);
+        pushCfgEvent(ev);
         sendJson(ex, 201, "{\"status\":\"created\"}");
     }
 
     private void updatePair(HttpExchange ex) throws IOException {
         PairConfigDto dto = jackson.readValue(ex.getRequestBody().readAllBytes(), PairConfigDto.class);
+        PairConfigDto oldDto = null;
         writeLock.lock();
         try {
             SimulatorConfig cfg = readConfig();
@@ -193,13 +204,42 @@ public class ConfigHttpServer implements Closeable {
                 sendErr(ex, 404, "Pair not found: " + dto.ccyPair);
                 return;
             }
+            oldDto = PairConfigDto.from(cfg.pairs.get(idx));
             cfg.pairs.set(idx, dto.toPairConfig());
             writeConfig(cfg);
         } finally {
             writeLock.unlock();
         }
-        broadcastConfigChanged(dto.ccyPair + " updated");
+        Map<String, Object> ev = new LinkedHashMap<>();
+        ev.put("action", "updated");
+        ev.put("pair", dto.ccyPair);
+        ev.put("changes", buildDiff(oldDto, dto));
+        pushCfgEvent(ev);
         sendJson(ex, 200, "{\"status\":\"updated\"}");
+    }
+
+    private void togglePair(HttpExchange ex) throws IOException {
+        ex.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+        if (!"POST".equals(ex.getRequestMethod())) { sendErr(ex, 405, "Method not allowed"); return; }
+        String pair = queryParam(ex, "pair");
+        if (pair == null) { sendErr(ex, 400, "Missing ?pair= query parameter"); return; }
+        boolean nowEnabled;
+        writeLock.lock();
+        try {
+            SimulatorConfig cfg = readConfig();
+            PairConfig pc = cfg.pairs.stream().filter(p -> p.ccyPair.equals(pair)).findFirst().orElse(null);
+            if (pc == null) { sendErr(ex, 404, "Pair not found: " + pair); return; }
+            pc.enabled = !pc.enabled;
+            nowEnabled = pc.enabled;
+            writeConfig(cfg);
+        } finally {
+            writeLock.unlock();
+        }
+        Map<String, Object> tev = new LinkedHashMap<>();
+        tev.put("action", nowEnabled ? "enabled" : "disabled");
+        tev.put("pair", pair);
+        pushCfgEvent(tev);
+        sendJson(ex, 200, "{\"enabled\":" + nowEnabled + "}");
     }
 
     private void deletePair(HttpExchange ex) throws IOException {
@@ -216,7 +256,10 @@ public class ConfigHttpServer implements Closeable {
         } finally {
             writeLock.unlock();
         }
-        broadcastConfigChanged(pair + " removed");
+        Map<String, Object> dev = new LinkedHashMap<>();
+        dev.put("action", "deleted");
+        dev.put("pair", pair);
+        pushCfgEvent(dev);
         sendJson(ex, 200, "{\"status\":\"deleted\"}");
     }
 
@@ -279,6 +322,7 @@ public class ConfigHttpServer implements Closeable {
             m.put("tickIntervalMs",  pc.tickIntervalMs);
             m.put("bidSize",         pc.bidSize);
             m.put("askSize",         pc.askSize);
+            m.put("enabled",         pc.enabled);
             pairsList.add(m);
         }
         root.put("pairs", pairsList);
@@ -321,6 +365,40 @@ public class ConfigHttpServer implements Closeable {
         long r = 1L;
         for (int i = 0; i < n; i++) r *= 10;
         return r;
+    }
+
+    private List<Map<String, String>> buildDiff(PairConfigDto o, PairConfigDto n) {
+        List<Map<String, String>> changes = new ArrayList<>();
+        if (o == null) return changes;
+        addChange(changes, "LP",         o.lpName,     n.lpName);
+        addChange(changes, "Mid",
+            String.format("%." + o.decimalPlaces + "f", o.initialMidPrice),
+            String.format("%." + n.decimalPlaces + "f", n.initialMidPrice));
+        addChange(changes, "Spread",     o.spreadPips + " pips",   n.spreadPips + " pips");
+        addChange(changes, "Volatility", String.valueOf(o.volatility), String.valueOf(n.volatility));
+        addChange(changes, "Drift",      String.valueOf(o.drift),       String.valueOf(n.drift));
+        addChange(changes, "Tick",       o.tickIntervalMs + "ms",  n.tickIntervalMs + "ms");
+        addChange(changes, "Bid Size",   fmtSize(o.bidSize),        fmtSize(n.bidSize));
+        addChange(changes, "Ask Size",   fmtSize(o.askSize),        fmtSize(n.askSize));
+        return changes;
+    }
+
+    private static void addChange(List<Map<String, String>> list, String field, String from, String to) {
+        if (from == null) from = "";
+        if (to   == null) to   = "";
+        if (!from.equals(to)) {
+            Map<String, String> c = new LinkedHashMap<>();
+            c.put("field", field);
+            c.put("from",  from);
+            c.put("to",    to);
+            list.add(c);
+        }
+    }
+
+    private static String fmtSize(double v) {
+        if (v >= 1_000_000) return String.format("%.0fM", v / 1_000_000);
+        if (v >= 1_000)     return String.format("%.0fK", v / 1_000);
+        return String.valueOf((long) v);
     }
 
     @Override

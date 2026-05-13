@@ -10,19 +10,20 @@ pairs:
 - ccyPair: EUR/USD
   instrument: SPOT
   lpName: SIMLP1
-  initialMidPrice: 108512
+  initialMidPrice: 117410
   decimalPlaces: 5
-  volatility: 0.6
+  volatility: 0.4
   drift: 0.3
   spreadPips: 2.0
   pipSize: 1.0E-5
-  tickIntervalMs: 500.0
+  tickIntervalMs: 100.0
   bidSize: 1000000.0
   askSize: 1000000.0
+  enabled: true
 - ccyPair: GBP/USD
   instrument: SPOT
   lpName: SIMLP2
-  initialMidPrice: 127000
+  initialMidPrice: 135400
   decimalPlaces: 5
   volatility: 0.12
   drift: 0.02
@@ -31,6 +32,7 @@ pairs:
   tickIntervalMs: 1000.0
   bidSize: 1000000.0
   askSize: 1000000.0
+  enabled: true
 - ccyPair: USD/JPY
   instrument: SPOT
   lpName: SIMLP3
@@ -43,10 +45,11 @@ pairs:
   tickIntervalMs: 100.0
   bidSize: 1000000.0
   askSize: 1000000.0
+  enabled: true
 - ccyPair: XAU/USD
   instrument: SPOT
   lpName: SIMLP4
-  initialMidPrice: 235000
+  initialMidPrice: 471550
   decimalPlaces: 2
   volatility: 0.15
   drift: 0.03
@@ -55,11 +58,12 @@ pairs:
   tickIntervalMs: 100.0
   bidSize: 100.0
   askSize: 100.0
+  enabled: true
 - ccyPair: SGD/JPY
   instrument: SPOT
   lpName: HEHEFX
-  initialMidPrice: 12345
-  decimalPlaces: 2
+  initialMidPrice: 122450
+  decimalPlaces: 3
   volatility: 0.1
   drift: 0.01
   spreadPips: 5.0
@@ -67,6 +71,7 @@ pairs:
   tickIntervalMs: 1000.0
   bidSize: 1000000.0
   askSize: 1000000.0
+  enabled: true
 - ccyPair: USD/SGD
   instrument: SPOT
   lpName: HEHEFX
@@ -79,3 +84,4 @@ pairs:
   tickIntervalMs: 1000.0
   bidSize: 1000000.0
   askSize: 1000000.0
+  enabled: true

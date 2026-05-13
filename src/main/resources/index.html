@@ -17,6 +17,17 @@
       --blue:     #2196f3;
       --blue-dk:  #1565c0;
     }
+    [data-theme="light"] {
+      --bg:       #f0f3fa;
+      --card:     #ffffff;
+      --border:   #dce0e8;
+      --text:     #131722;
+      --dim:      #6b7280;
+      --green:    #0d9488;
+      --red:      #dc2626;
+      --blue:     #1d6de5;
+      --blue-dk:  #1549b0;
+    }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif; font-size: 13px; line-height: 1.4; }
 
@@ -27,6 +38,8 @@
       background: var(--card); border-bottom: 1px solid var(--border);
     }
     .logo { font-size: 14px; font-weight: 700; letter-spacing: 0.5px; color: var(--blue); }
+    #theme-btn { background: none; border: 1px solid var(--border); border-radius: 5px; color: var(--dim); cursor: pointer; font-size: 14px; line-height: 1; padding: 4px 7px; transition: color .15s, border-color .15s; }
+    #theme-btn:hover { color: var(--text); border-color: var(--dim); }
     #conn-badge {
       display: flex; align-items: center; gap: 6px;
       font-size: 11px; color: var(--dim);
@@ -91,8 +104,40 @@
     .px-val.ask { color: var(--red); }
     td.bid { color: var(--green); }
     td.ask { color: var(--red); }
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 10px;
+      font-size: 10px; font-weight: 600; letter-spacing: 0.4px; text-transform: uppercase;
+    }
+    .badge-on  { background: rgba(38,166,154,.18); color: var(--green); }
+    .badge-off { background: rgba(120,123,134,.15); color: var(--dim); }
+    /* ── Toggle switch ── */
+    .toggle { position: relative; display: inline-block; width: 34px; height: 19px; cursor: pointer; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .toggle-track {
+      position: absolute; inset: 0; border-radius: 19px;
+      background: var(--border); transition: background .2s;
+    }
+    .toggle-thumb {
+      position: absolute; width: 13px; height: 13px; top: 3px; left: 3px;
+      background: #fff; border-radius: 50%; transition: transform .2s;
+    }
+    .toggle input:checked ~ .toggle-track { background: var(--green); }
+    .toggle input:checked ~ .toggle-thumb { transform: translateX(15px); }
     #chart-outer { position: relative; }
     #chart-wrap  { height: 300px; }
+    #chart-tooltip {
+      position: absolute; top: 8px; left: 8px; z-index: 10;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 4px; padding: 6px 10px;
+      font-size: 11px; pointer-events: none; line-height: 1.6;
+    }
+    #chart-tooltip.hidden { display: none; }
+    #tt-time { color: var(--dim); font-size: 10px; margin-bottom: 2px; }
+    .tt-row  { display: flex; gap: 8px; align-items: baseline; }
+    .tt-lbl  { font-size: 10px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; width: 24px; }
+    .tt-val  { font-variant-numeric: tabular-nums; font-size: 12px; }
+    .bid-lbl { color: var(--green); }
+    .ask-lbl { color: var(--red); }
     #live-btn {
       position: absolute; top: 8px; right: 8px; z-index: 10;
       background: var(--blue); color: #fff; border: none; border-radius: 4px;
@@ -200,13 +245,30 @@
     .toast-time { font-size: 10px; color: var(--dim); }
     .toast-x    { background: none; border: none; color: var(--dim); cursor: pointer; font-size: 16px; line-height: 1; flex-shrink: 0; padding: 0 2px; }
     .toast-x:hover { color: var(--text); }
+    .toast.toast-green { border-left-color: var(--green); }
+    .toast.toast-red   { border-left-color: var(--red);   }
+    .toast.toast-dim   { border-left-color: var(--dim);   }
+    .toast-title { font-size: 12px; font-weight: 600; margin-bottom: 5px; display: flex; align-items: center; gap: 6px; }
+    .toast-badge { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 3px; letter-spacing: 0.3px; }
+    .toast-fields { display: flex; flex-wrap: wrap; gap: 3px 14px; margin-bottom: 4px; }
+    .toast-field { font-size: 11px; color: var(--dim); }
+    .toast-field b { color: var(--text); font-weight: 500; }
+    .toast-changes { margin-bottom: 4px; }
+    .toast-change { display: flex; align-items: baseline; gap: 5px; font-size: 11px; padding: 1px 0; }
+    .toast-change-label { color: var(--dim); min-width: 65px; flex-shrink: 0; }
+    .toast-from  { color: var(--red); text-decoration: line-through; opacity: 0.85; }
+    .toast-arrow { color: var(--dim); }
+    .toast-to    { color: var(--green); }
   </style>
 </head>
 <body>
 
 <header>
   <div class="logo">⬡ ReplicatorFX</div>
-  <div id="conn-badge"><span id="conn-dot"></span><span id="conn-txt">Connecting…</span></div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <button id="theme-btn" title="Toggle light/dark mode">☀</button>
+    <div id="conn-badge"><span id="conn-dot"></span><span id="conn-txt">Connecting…</span></div>
+  </div>
 </header>
 
 <div id="pair-tabs">
@@ -227,6 +289,11 @@
   </div>
   <div id="chart-outer">
     <div id="chart-wrap"></div>
+    <div id="chart-tooltip" class="hidden">
+      <div id="tt-time"></div>
+      <div class="tt-row"><span class="tt-lbl bid-lbl">Bid</span><span id="tt-bid" class="tt-val"></span></div>
+      <div class="tt-row"><span class="tt-lbl ask-lbl">Ask</span><span id="tt-ask" class="tt-val"></span></div>
+    </div>
     <button id="live-btn" class="hidden" onclick="snapToLive()">▶ Live</button>
   </div>
 </div>
@@ -235,7 +302,7 @@
   <div id="rates-hdr"><h2>Live Rates</h2></div>
   <table>
     <thead>
-      <tr><th>Pair</th><th>Bid</th><th>Ask</th><th>Spread</th><th>Rate ID</th><th>Updated</th></tr>
+      <tr><th>Pair</th><th>Bid</th><th>Ask</th><th>Spread</th><th>Rate ID</th><th>Updated</th><th>Status</th></tr>
     </thead>
     <tbody id="rates-tbl"></tbody>
   </table>
@@ -250,7 +317,7 @@
     <thead>
       <tr>
         <th>Pair</th><th>LP</th><th>Mid Price</th><th>Spread (pips)</th>
-        <th>Volatility</th><th>Drift</th><th>Tick (ms)</th><th>Bid / Ask Size</th><th></th>
+        <th>Volatility</th><th>Drift</th><th>Tick (ms)</th><th>Bid / Ask Size</th><th>Status</th><th></th>
       </tr>
     </thead>
     <tbody id="tbl"></tbody>
@@ -301,7 +368,27 @@ const chart = LightweightCharts.createChart(chartWrap, {
   grid:   { vertLines: { color: '#2a2e39' }, horzLines: { color: '#2a2e39' } },
   crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
   rightPriceScale: { borderColor: '#2a2e39', visible: true, borderVisible: true, ticksVisible: true },
-  timeScale: { borderColor: '#2a2e39', timeVisible: true, secondsVisible: true },
+  localization: {
+    timeFormatter: (time) =>
+      new Date(time * 1000).toLocaleTimeString('en-GB', {
+        timeZone: 'Asia/Singapore', hour12: false,
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+      }),
+  },
+  timeScale: {
+    borderColor: '#2a2e39', timeVisible: true, secondsVisible: true,
+    tickMarkFormatter: (time, tickMarkType) => {
+      const d = new Date(time * 1000);
+      if (tickMarkType <= 2) {
+        return d.toLocaleDateString('en-GB', { timeZone: 'Asia/Singapore', day: '2-digit', month: 'short' });
+      }
+      return d.toLocaleTimeString('en-GB', {
+        timeZone: 'Asia/Singapore', hour12: false,
+        hour: '2-digit', minute: '2-digit',
+        ...(tickMarkType === 4 ? { second: '2-digit' } : {}),
+      });
+    },
+  },
   handleScroll: true, handleScale: true,
 });
 const bidLine = chart.addLineSeries({ color: '#26a69a', lineWidth: 1, title: 'Bid' });
@@ -311,6 +398,28 @@ const askLine = chart.addLineSeries({ color: '#ef5350', lineWidth: 1, title: 'As
 new ResizeObserver(() => {
   chart.applyOptions({ width: chartWrap.clientWidth });
 }).observe(chartWrap);
+
+// ── Theme ─────────────────────────────────────────────────────────────────────
+function cssVar(n) {
+  return getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+}
+
+function applyTheme(light) {
+  document.documentElement.dataset.theme = light ? 'light' : '';
+  document.getElementById('theme-btn').textContent = light ? '🌙' : '☀';
+  chart.applyOptions({
+    layout: { background: { color: cssVar('--card') }, textColor: cssVar('--text') },
+    grid:   { vertLines: { color: cssVar('--border') }, horzLines: { color: cssVar('--border') } },
+    rightPriceScale: { borderColor: cssVar('--border') },
+    timeScale:       { borderColor: cssVar('--border') },
+  });
+  localStorage.setItem('theme', light ? 'light' : 'dark');
+}
+
+document.getElementById('theme-btn').onclick = () =>
+  applyTheme(document.documentElement.dataset.theme !== 'light');
+
+applyTheme(localStorage.getItem('theme') === 'light');
 
 // Track whether the user has scrolled away from the live edge
 let isFollowing = true;
@@ -331,6 +440,29 @@ function snapToLive() {
   chart.timeScale().scrollToRealTime();
 }
 
+// ── Crosshair tooltip ─────────────────────────────────────────────────────────
+chart.subscribeCrosshairMove(param => {
+  const tooltip = document.getElementById('chart-tooltip');
+  if (!param.time || !param.point ||
+      param.point.x < 0 || param.point.y < 0) {
+    tooltip.classList.add('hidden');
+    return;
+  }
+  const bidData = param.seriesData.get(bidLine);
+  const askData = param.seriesData.get(askLine);
+  if (!bidData && !askData) { tooltip.classList.add('hidden'); return; }
+
+  const p  = pairs.find(p => p.ccyPair === activePair);
+  const dp = p ? p.decimalPlaces : 5;
+  const t  = new Date(param.time * 1000)
+    .toLocaleTimeString('en-GB', { timeZone: 'Asia/Singapore', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+  document.getElementById('tt-time').textContent = t;
+  document.getElementById('tt-bid').textContent  = bidData ? bidData.value.toFixed(dp) : '—';
+  document.getElementById('tt-ask').textContent  = askData ? askData.value.toFixed(dp) : '—';
+  tooltip.classList.remove('hidden');
+});
+
 // ── SSE connection ─────────────────────────────────────────────────────────────
 function connectSSE() {
   const es = new EventSource('/events');
@@ -342,8 +474,7 @@ function connectSSE() {
 
   es.addEventListener('cfg', e => {
     const d = JSON.parse(e.data);
-    toast(d.msg);
-    // Reload table and tabs so all users see the updated config
+    showCfgToast(d);
     loadPairs();
   });
 
@@ -393,24 +524,30 @@ function renderRatesTable() {
   const tb = document.getElementById('rates-tbl');
   tb.innerHTML = '';
   pairs.forEach(p => {
+    const key = CSS.escape(p.ccyPair);
     const tr = document.createElement('tr');
-    tr.id = 'rr-' + CSS.escape(p.ccyPair);
+    tr.id = 'rr-' + key;
     tr.innerHTML = `
       <td class="bold">${esc(p.ccyPair)}</td>
-      <td class="mono bid" id="rr-bid-${CSS.escape(p.ccyPair)}">—</td>
-      <td class="mono ask" id="rr-ask-${CSS.escape(p.ccyPair)}">—</td>
-      <td class="mono dim" id="rr-spd-${CSS.escape(p.ccyPair)}">—</td>
-      <td class="mono dim" id="rr-rid-${CSS.escape(p.ccyPair)}">—</td>
-      <td class="dim"      id="rr-ts-${CSS.escape(p.ccyPair)}">—</td>
+      <td class="mono bid" id="rr-bid-${key}">—</td>
+      <td class="mono ask" id="rr-ask-${key}">—</td>
+      <td class="mono dim" id="rr-spd-${key}">—</td>
+      <td class="mono dim" id="rr-rid-${key}">—</td>
+      <td class="dim"      id="rr-ts-${key}">—</td>
+      <td                  id="rr-st-${key}"></td>
     `;
+    renderStatusBadge(p, tr.lastElementChild);
     tb.appendChild(tr);
-    // Populate from cached data if already received ticks
     const b = book[p.ccyPair];
     if (b && b.latest) {
       const { bid, ask, rateId, ts } = b.latest;
       fillRatesRow(p, bid, ask, rateId, ts);
     }
   });
+}
+
+function renderStatusBadge(p, cell) {
+  cell.innerHTML = `<span class="badge ${p.enabled ? 'badge-on' : 'badge-off'}">${p.enabled ? 'Active' : 'Paused'}</span>`;
 }
 
 function updateRatesRow(pair, bid, ask, rateId, ts) {
@@ -423,7 +560,7 @@ function fillRatesRow(p, bid, ask, rateId, ts) {
   const key = CSS.escape(p.ccyPair);
   const dp  = p.decimalPlaces;
   const spreadPips = ((ask - bid) / p.pipSize).toFixed(1);
-  const time = new Date(ts).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3 });
+  const time = new Date(ts).toLocaleTimeString('en-GB', { timeZone: 'Asia/Singapore', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3 });
 
   setCell('rr-bid-' + key, bid.toFixed(dp));
   setCell('rr-ask-' + key, ask.toFixed(dp));
@@ -517,7 +654,7 @@ function switchPair(pair) {
 function renderTable() {
   const tb = document.getElementById('tbl');
   if (!pairs.length) {
-    tb.innerHTML = '<tr class="empty-row"><td colspan="9">No pairs configured. Add one above.</td></tr>';
+    tb.innerHTML = '<tr class="empty-row"><td colspan="10">No pairs configured. Add one above.</td></tr>';
     return;
   }
   tb.innerHTML = '';
@@ -533,8 +670,26 @@ function renderTable() {
       <td>${p.tickIntervalMs}</td>
       <td class="dim">${fmtSize(p.bidSize)} / ${fmtSize(p.askSize)}</td>
       <td></td>
+      <td></td>
     `;
-    const actions = tr.lastElementChild;
+    const cells   = tr.querySelectorAll('td');
+    const statusTd  = cells[cells.length - 2];
+    const actionsTd = cells[cells.length - 1];
+
+    const label = document.createElement('label');
+    label.className = 'toggle';
+    label.title = p.enabled ? 'Pause' : 'Resume';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = p.enabled;
+    cb.onchange = () => doToggle(p.ccyPair);
+    const track = document.createElement('span');
+    track.className = 'toggle-track';
+    const thumb = document.createElement('span');
+    thumb.className = 'toggle-thumb';
+    label.append(cb, track, thumb);
+    statusTd.appendChild(label);
+
     const editBtn = document.createElement('button');
     editBtn.className = 'btn btn-ghost';
     editBtn.textContent = 'Edit';
@@ -543,7 +698,7 @@ function renderTable() {
     delBtn.className = 'btn btn-danger';
     delBtn.textContent = 'Delete';
     delBtn.onclick = () => doDelete(p.ccyPair);
-    actions.append(editBtn, delBtn);
+    actionsTd.append(editBtn, delBtn);
     tb.appendChild(tr);
   });
 }
@@ -581,6 +736,12 @@ async function loadPairs() {
   }
 }
 
+async function doToggle(ccyPair) {
+  const r = await fetch('/api/pairs/toggle?pair=' + encodeURIComponent(ccyPair), { method: 'POST' });
+  if (!r.ok) { const d = await r.json(); alert('Error: ' + d.error); }
+  // Tables refresh via the incoming SSE cfg event
+}
+
 async function doDelete(ccyPair) {
   if (!confirm(`Delete ${ccyPair}?`)) return;
   const r = await fetch('/api/pairs?pair=' + encodeURIComponent(ccyPair), { method: 'DELETE' });
@@ -612,7 +773,7 @@ function openEdit(p) {
   modalMode = 'edit';
   document.getElementById('modal-title').textContent = 'Edit ' + p.ccyPair;
   document.getElementById('modal-hint').textContent =
-    'Mid Price only resets when a pair is first created or the app restarts.';
+    'Changing Mid Price snaps the simulation to the new value immediately.';
   setVal('f-ccy',    p.ccyPair);
   setVal('f-lp',     p.lpName);
   setVal('f-mid',    p.initialMidPrice);
@@ -678,6 +839,64 @@ async function submitModal() {
 }
 
 // ── Toasts ────────────────────────────────────────────────────────────────────
+function showCfgToast(d) {
+  const pair = d.pair || '';
+  let cls = '', badge = '', body = '';
+
+  if (d.action === 'added') {
+    cls = 'toast-green';
+    badge = `<span class="toast-badge" style="background:var(--green);color:#0d1a19">ADDED</span>`;
+    if (d.config) {
+      body = '<div class="toast-fields">' +
+        Object.entries(d.config).map(([k, v]) =>
+          `<span class="toast-field">${esc(k)} <b>${esc(String(v))}</b></span>`
+        ).join('') + '</div>';
+    }
+  } else if (d.action === 'updated') {
+    cls = 'toast-blue';
+    badge = `<span class="toast-badge" style="background:var(--blue);color:#fff">UPDATED</span>`;
+    if (d.changes && d.changes.length) {
+      body = '<div class="toast-changes">' +
+        d.changes.map(c =>
+          `<div class="toast-change">
+             <span class="toast-change-label">${esc(c.field)}</span>
+             <span class="toast-from">${esc(c.from)}</span>
+             <span class="toast-arrow">→</span>
+             <span class="toast-to">${esc(c.to)}</span>
+           </div>`
+        ).join('') + '</div>';
+    }
+  } else if (d.action === 'deleted') {
+    cls = 'toast-red';
+    badge = `<span class="toast-badge" style="background:var(--red);color:#fff">REMOVED</span>`;
+  } else if (d.action === 'enabled') {
+    cls = 'toast-green';
+    badge = `<span class="toast-badge" style="background:var(--green);color:#0d1a19">ENABLED</span>`;
+  } else if (d.action === 'disabled') {
+    cls = 'toast-dim';
+    badge = `<span class="toast-badge" style="background:var(--dim);color:#fff">PAUSED</span>`;
+  } else {
+    toast(d.msg || JSON.stringify(d));
+    return;
+  }
+
+  const c = document.getElementById('toasts');
+  const el = document.createElement('div');
+  el.className = 'toast ' + cls;
+  el.innerHTML = `
+    <div class="toast-body">
+      <div class="toast-title">${esc(pair)}${badge ? ' ' + badge : ''}</div>
+      ${body}
+      <div class="toast-time">${new Date().toLocaleTimeString()}</div>
+    </div>
+    <button class="toast-x" title="Dismiss">×</button>
+  `;
+  el.querySelector('.toast-x').onclick = () => el.remove();
+  c.appendChild(el);
+  const ttl = d.action === 'updated' ? 10000 : 6000;
+  setTimeout(() => { if (el.parentNode) el.remove(); }, ttl);
+}
+
 function toast(msg) {
   const c = document.getElementById('toasts');
   const d = document.createElement('div');
