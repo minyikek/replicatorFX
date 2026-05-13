@@ -87,6 +87,10 @@ public final class GbmTickerNode implements EventDispatcher<GbmTick>, Runnable, 
                         .computeIfAbsent(config.ccyPair, k -> new AtomicLong(0))
                         .incrementAndGet();
 
+                    long rateId = rateCounters
+                        .computeIfAbsent(config.ccyPair, k -> new AtomicLong(0))
+                        .incrementAndGet();
+
                     dispatch(new GbmTick(
                         config.ccyPair,
                         config.instrument,
